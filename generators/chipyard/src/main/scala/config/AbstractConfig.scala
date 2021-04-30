@@ -10,6 +10,13 @@ import freechips.rocketchip.config.{Config}
 // The default set of HarnessBinders instantiate TestHarness hardware for interacting with ChipTop IOs
 // --------------
 
+class MinimalAbstractConfig extends Config(
+      new freechips.rocketchip.subsystem.WithNMemoryChannels(0) ++
+      new freechips.rocketchip.subsystem.WithNoMemPort ++
+      new testchipip.WithBackingScratchpad ++
+      new chipyard.config.AbstractConfig
+)
+
 class AbstractConfig extends Config(
   // The HarnessBinders control generation of hardware in the TestHarness
   new chipyard.harness.WithUARTAdapter ++                       // add UART adapter to display UART on stdout, if uart is present
@@ -52,4 +59,3 @@ class AbstractConfig extends Config(
   new freechips.rocketchip.subsystem.WithNExtTopInterrupts(0) ++ // no external interrupts
   new chipyard.WithMulticlockCoherentBusTopology ++              // hierarchical buses including mbus+l2
   new freechips.rocketchip.system.BaseConfig)                    // "base" rocketchip system
-
