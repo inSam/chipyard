@@ -1,7 +1,7 @@
 package chipyard.harness
 
 import chisel3._
-import chisel3.experimental.{Analog, BaseModule}
+import chisel3.experimental.{Analog, IO, BaseModule}
 
 import freechips.rocketchip.config.{Field, Config, Parameters}
 import freechips.rocketchip.diplomacy.{LazyModule, LazyModuleImpLike}
@@ -20,7 +20,7 @@ import barstools.iocell.chisel._
 import testchipip._
 
 import chipyard.HasHarnessSignalReferences
-import chipyard.iobinders.GetSystemParameters
+import chipyard.iobinders._
 
 import tracegen.{TraceGenSystemModuleImp}
 import icenet.{CanHavePeripheryIceNIC, SimNetwork, NicLoopback, NICKey, NICIOvonly}
@@ -89,6 +89,43 @@ class WithUARTAdapter extends OverrideHarnessBinder({
 class WithSimSPIFlashModel(rdOnly: Boolean = true) extends OverrideHarnessBinder({
   (system: HasPeripherySPIFlashModuleImp, th: HasHarnessSignalReferences, ports: Seq[SPIChipIO]) => {
     SimSPIFlashModel.connect(ports, th.harnessReset, rdOnly)(system.p)
+  }
+})
+
+class WithPassthroughSimSPIFlashModel(rdOnly: Boolean = true) extends OverrideHarnessBinder({
+  (system: HasPeripherySPIFlashModuleImp, th: HasHarnessSignalReferences, ports: Seq[SPIPortIO]) => {
+    val params = system.p(PeripherySPIFlashKey)
+    val (ios: Seq[SPIChipIO], cells2d) = ports.zip(params).zipWithIndex.map({ case ((s, p), i) =>
+      val name = s"spi_${i}"
+      val port = Wire(new SPIChipIO(s.c.csWidth)).suggestName(name)
+      val iocellBase = s"iocell_${name}"
+
+      
+      val spi_mem = Module(new SimSPIFlashModel(p.fSize, i, rdOnly))
+
+      // SCK and CS are unidirectional outputs
+      val sckIOs = IOCell.generateFromSignal(s.sck, port.sck, Some(s"${iocellBase}_sck"), system.p(IOCellKey), IOCell.toAsyncReset)
+      val csIOs = IOCell.generateFromSignal(s.cs, port.cs, Some(s"${iocellBase}_cs"), system.p(IOCellKey), IOCell.toAsyncReset)
+
+      spi_mem.io.sck := port.sck
+      spi_mem.io.cs(0) := port.cs(0)
+      spi_mem.io.reset := th.harnessReset.asBool
+
+  
+      // DQ are bidirectional, so then need special treatment
+      val dqIOs = s.dq.zip(spi_mem.io.dq).zipWithIndex.map { case ((pin, ana), j) =>
+        val iocell = system.p(IOCellKey).gpio().suggestName(s"${iocellBase}_dq_${j}")
+        iocell.io.o := pin.o
+        iocell.io.oe := pin.oe
+        iocell.io.ie := true.B
+        pin.i := iocell.io.i
+        iocell.io.pad <> ana
+        iocell
+      }
+
+      (port, dqIOs ++ csIOs ++ sckIOs)
+    }).unzip
+    // SimSPIFlashModel.connect(ios, th.harnessReset, rdOnly)(system.p)
   }
 })
 

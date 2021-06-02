@@ -186,7 +186,7 @@ PERMISSIVE_OFF=+permissive-off
 BINARY ?=
 LOADMEM ?=
 LOADMEM_ADDR ?= 81000000
-override SIM_FLAGS += +dramsim +dramsim_ini_dir=$(TESTCHIP_DIR)/src/main/resources/dramsim2_ini +max-cycles=$(timeout_cycles)
+override SIM_FLAGS += +dramsim +dramsim_ini_dir=$(TESTCHIP_DIR)/src/main/resources/dramsim2_ini +max-cycles=$(timeout_cycles) +spiflash0=/tmp/samx/chipyard/sims/vcs/memory.hex
 ifneq ($(LOADMEM),)
 override SIM_FLAGS += +loadmem=$(LOADMEM) +loadmem_addr=$(LOADMEM_ADDR)
 endif

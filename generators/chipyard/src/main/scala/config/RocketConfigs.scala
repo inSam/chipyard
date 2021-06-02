@@ -7,6 +7,40 @@ import freechips.rocketchip.diplomacy.{AsynchronousCrossing}
 // Rocket Configs
 // --------------
 
+class CryptoConfig extends Config(
+  new freechips.rocketchip.subsystem.WithNBigCoresDebug(1) ++         // single rocket-core
+
+  new sha3.WithSha3Accel ++                                     // add SHA3 rocc accelerator
+  new chipyard.cryptoship.WithRNG() ++
+  new chipyard.cryptoship.WithAES ++
+  new chipyard.config.WithDeepFPU ++
+
+  new chipyard.config.MinimalAbstractConfig
+)
+
+class CryptoDebugConfig extends Config(
+  new freechips.rocketchip.subsystem.WithNBigCoresDebug(1) ++         // single rocket-core
+
+  new sha3.WithSha3Accel ++                                     // add SHA3 rocc accelerator
+  new chipyard.cryptoship.WithRNG() ++
+  new chipyard.cryptoship.WithAES ++
+  new chipyard.config.WithDeepFPU ++
+
+  new chipyard.config.MinimalAbstractDebugConfig
+)
+
+
+class CryptoSynConfig extends Config(
+  new freechips.rocketchip.subsystem.WithNBigCoresSyn(1) ++         // single rocket-core
+
+  new sha3.WithSha3Accel ++                                // add SHA3 rocc accelerator
+  new chipyard.cryptoship.WithRNG() ++
+  new chipyard.cryptoship.WithAES ++
+
+  new chipyard.config.MinimalAbstractSynConfig
+)
+
+
 class RocketConfig extends Config(
   new freechips.rocketchip.subsystem.WithNBigCores(1) ++         // single rocket-core
   new chipyard.config.AbstractConfig)

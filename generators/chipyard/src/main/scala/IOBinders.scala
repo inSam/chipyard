@@ -128,6 +128,9 @@ class ComposeLazyIOBinder[T](fn: T => ModuleValue[IOBinderTuple])(implicit tag: 
 
 case object IOCellKey extends Field[IOCellTypeParams](GenericIOCellParams())
 
+class WithPassthroughIOCells extends Config((site, here, up) => {
+  case IOCellKey => PassthroughIOCellParams()
+})
 
 class WithGPIOCells extends OverrideIOBinder({
   (system: HasPeripheryGPIOModuleImp) => {
@@ -145,6 +148,16 @@ class WithGPIOCells extends OverrideIOBinder({
     }).unzip
     val ports: Seq[Analog] = ports2d.flatten
     (ports, cells2d.flatten)
+  }
+})
+
+class WithPassthroughGPIO extends OverrideIOBinder({
+  (system: HasPeripheryGPIOModuleImp) => {
+    val io_pins = system.gpio.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"spi_${i}") }
+    (io_pins zip system.gpio).map { case (io, sysio) =>
+      io <> sysio
+    }
+    (io_pins, Nil)
   }
 })
 
@@ -185,6 +198,16 @@ class WithSPIIOCells extends OverrideIOBinder({
       (port, dqIOs ++ csIOs ++ sckIOs)
     }).unzip
     (ports, cells2d.flatten)
+  }
+})
+
+class WithPassthroughSPI extends OverrideIOBinder({
+  (system: HasPeripherySPIFlashModuleImp) => {
+    val io_pins = system.qspi.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"spi_${i}") }
+    (io_pins zip system.qspi).map { case (io, sysio) =>
+      io <> sysio
+    }
+    (io_pins, Nil)
   }
 })
 
