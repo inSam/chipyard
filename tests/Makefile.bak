@@ -1,12 +1,13 @@
 GCC=riscv64-unknown-elf-gcc
 OBJDUMP=riscv64-unknown-elf-objdump
 CFLAGS= -std=gnu99 -O2 -fno-common -fno-builtin-printf -Wall
-LDFLAGS= -static -T htif.ld -nostdlib -nostartfiles -lgcc
+LDFLAGS= -static
+
+include libgloss.mk
 
 PROGRAMS = pwm blkdev accum charcount nic-loopback big-blkdev pingd \
            streaming-passthrough streaming-fir nvdla spiflashread spiflashwrite \
-	   printf rng aes rng_noa empty aes_empty aes_bulk aes256 hello_world \
-	   rng_uart aes_uart
+	   printf rng aes rng_noa empty aes_empty aes_bulk aes256 hello_world
 
 spiflash.img: spiflash.py
 	python3 $<
@@ -25,8 +26,8 @@ dumps: $(addsuffix .dump,$(PROGRAMS))
 %.o: %.c mmio.h spiflash.h
 	$(GCC) $(CFLAGS) -c $< -o $@
 
-%.riscv: %.o crt.o syscalls.o
-	$(GCC) $(LDFLAGS) $^ -o $@
+%.riscv: %.o $(libgloss)
+	$(GCC) $(LDFLAGS) $< -o $@
 
 %.dump: %.riscv
 	$(OBJDUMP) -D $< > $@
@@ -35,3 +36,4 @@ dumps: $(addsuffix .dump,$(PROGRAMS))
 .PHONY: clean
 clean:
 	rm -f *.riscv *.o *.dump
+	$(if $(libgloss),rm -rf $(libgloss_builddir)/)

@@ -22,8 +22,6 @@ SECTIONS
 .tohost ALIGN(0x1000) : { *(.tohost) }
 .text : { *(.text) }
 /* data segment */
-
-. = 0x80000000;
 .data ALIGN(0x40) : { *(.data) }
 .sdata : {
 __global_pointer$ = . + 0x800;
@@ -50,6 +48,6 @@ _tls_data = .;
 *(.tbss.end)
 }
 /* End of uninitalized data segement */
-_end = .;
-/* _end = 0x80000000; */
+/* _end = .; */
+_end = 0x80000000;
 }

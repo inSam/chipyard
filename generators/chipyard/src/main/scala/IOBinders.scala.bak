@@ -14,13 +14,9 @@ import freechips.rocketchip.util._
 import freechips.rocketchip.prci.{ClockSinkNode, ClockSinkParameters}
 import freechips.rocketchip.groundtest.{GroundTestSubsystemModuleImp, GroundTestSubsystem}
 
-import chipyard.example._
-
 import sifive.blocks.devices.gpio._
 import sifive.blocks.devices.uart._
 import sifive.blocks.devices.spi._
-import sifive.blocks.devices.i2c._
-import sifive.blocks.devices.pwm._
 import tracegen.{TraceGenSystemModuleImp}
 
 import barstools.iocell.chisel._
@@ -157,7 +153,7 @@ class WithGPIOCells extends OverrideIOBinder({
 
 class WithPassthroughGPIO extends OverrideIOBinder({
   (system: HasPeripheryGPIOModuleImp) => {
-    val io_pins = system.gpio.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"gpio_${i}") }
+    val io_pins = system.gpio.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"spi_${i}") }
     (io_pins zip system.gpio).map { case (io, sysio) =>
       io <> sysio
     }
@@ -205,55 +201,15 @@ class WithSPIIOCells extends OverrideIOBinder({
   }
 })
 
-class WithPassthroughSPIFlash extends OverrideIOBinder({
+class WithPassthroughSPI extends OverrideIOBinder({
   (system: HasPeripherySPIFlashModuleImp) => {
-    val io_pins = system.qspi.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"qspi_${i}") }
+    val io_pins = system.qspi.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"spi_${i}") }
     (io_pins zip system.qspi).map { case (io, sysio) =>
       io <> sysio
     }
     (io_pins, Nil)
   }
 })
-
-class WithPassthroughSPI extends OverrideIOBinder({
-  (system: HasPeripherySPIModuleImp) => {
-    val io_pins = system.spi.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"spi_${i}") }
-    (io_pins zip system.spi).map { case (io, sysio) =>
-      io <> sysio
-    }
-    (io_pins, Nil)
-  }
-})
-
-class WithPassthroughI2C extends OverrideIOBinder({
-  (system: HasPeripheryI2CModuleImp) => {
-    val io_pins = system.i2c.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"i2c_${i}") }
-    (io_pins zip system.i2c).map { case (io, sysio) =>
-      io <> sysio
-    }
-    (io_pins, Nil)
-  }
-})
-class WithPassthroughPWM extends OverrideIOBinder({
-  (system: HasPeripheryPWMModuleImp) => {
-    val io_pins = system.pwm.zipWithIndex.map { case (s, i) => IO(s.cloneType).suggestName(s"pwm_${i}") }
-    (io_pins zip system.pwm).map { case (io, sysio) =>
-      io <> sysio
-    }
-    (io_pins, Nil)
-  }
-})
-
-class WithCustomGPIOIOCells extends OverrideIOBinder({
-  (system: CanHaveCustomGPIO) => system.customGPIOOpt.map({ gpio =>
-    val sys = system.asInstanceOf[BaseSubsystem]
-    val (port, cells) = IOCell.generateIOFromSignal(gpio.getWrappedValue, "custom_gpio", sys.p(IOCellKey))
-    (Seq(port), cells)
-  }).getOrElse((Nil, Nil))
-})
-
-
-
 
 class WithExtInterruptIOCells extends OverrideIOBinder({
   (system: HasExtInterruptsModuleImp) => {

@@ -32,6 +32,7 @@ import sifive.blocks.devices.pwm._
 import sifive.blocks.devices.i2c._
 
 import chipyard._
+import chipyard.example._
 
 // -----------------------
 // Common Config Fragments
@@ -41,6 +42,12 @@ class WithDeepFPU extends Config((site, here, up) => {
   case RocketTilesKey => up(RocketTilesKey, site) map { r =>
       r.copy(core = r.core.copy(fpu = r.core.fpu.map(_.copy(sfmaLatency = 5, dfmaLatency = 6))))
       }
+})
+
+class WithCustomGPIO(nInput: Int = 8, nOutput: Int = 8) extends Config((site, here, up) => {
+      case CustomGPIOKey => Some(
+            CustomGPIOParams(address = 0x500000, nInput = nInput, nOutput = nOutput)
+	    )
 })
 
 class WithNGPIO(nGPIOs: Int = 3) extends Config((site, here, up) => {
@@ -54,10 +61,8 @@ class WithNSPI(csW: Int = 1) extends Config((site, here, up) => {
  })
 
 class WithI2C(nI2C : Int = 4 ) extends Config((site, here, up) =>{
-  case PeripheryI2CKey => List(
-      (0 until nI2C).map{i =>
-        I2CParams(address = 0x10028000 + 0x10*i)
-      })
+      case PeripheryI2CKey => Seq(
+         I2CParams(address = 0x10028000))
  })
 class WithPWM() extends Config((site, here, up) =>{
   case PeripheryPWMKey => List(
@@ -69,7 +74,7 @@ class WithBootROM extends Config((site, here, up) => {
 })
 
 class WithBootSPIROM extends Config((site, here, up) => {
-  case BootROMLocated(x) => up(BootROMLocated(x), site).map(_.copy(contentFileName = s"./bootrom/bootrom.rv${site(XLen)}.img", hang=0x20000000))
+  case BootROMLocated(x) => up(BootROMLocated(x), site).map(_.copy(contentFileName = s"./bootrom/bootrom.rv${site(XLen)}.img", hang=0x10000))
 })
 
 

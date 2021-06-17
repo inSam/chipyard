@@ -14,8 +14,6 @@ import freechips.rocketchip.subsystem._
 import sifive.blocks.devices.gpio._
 import sifive.blocks.devices.uart._
 import sifive.blocks.devices.spi._
-import sifive.blocks.devices.i2c._
-import sifive.blocks.devices.pwm._
 
 import barstools.iocell.chisel._
 
@@ -23,7 +21,6 @@ import testchipip._
 
 import chipyard.HasHarnessSignalReferences
 import chipyard.iobinders._
-import chipyard.example._
 
 import tracegen.{TraceGenSystemModuleImp}
 import icenet.{CanHavePeripheryIceNIC, SimNetwork, NicLoopback, NICKey, NICIOvonly}
@@ -81,43 +78,6 @@ class WithGPIOTiedOff extends OverrideHarnessBinder({
   }
 })
 
-class WithPassthroughGPIOTiedOff extends OverrideHarnessBinder({
-  (system: HasPeripheryGPIOModuleImp, th: HasHarnessSignalReferences, ports: Seq[GPIOPortIO]) => {
-    val (ports2d, cells2d) = ports.zipWithIndex.map({ case (gpio, i) =>
-      gpio.pins.zipWithIndex.map({ case (pin, j) =>
-        val g = Wire(Analog(1.W)).suggestName(s"gpio_${i}_${j}")
-        val iocell = system.p(IOCellKey).gpio().suggestName(s"iocell_gpio_${i}_${j}")
-        iocell.io.o := pin.o.oval
-        iocell.io.oe := pin.o.oe
-        iocell.io.ie := pin.o.ie
-        pin.i.ival := iocell.io.i
-        pin.i.po.map(_ := DontCare)
-        iocell.io.pad <> AnalogConst(0)
-        (g, iocell)
-      }).unzip
-    }).unzip
-  }
-})
-
-class WithPassthroughSPITiedOff extends OverrideHarnessBinder({
-  (system: HasPeripherySPIModuleImp, th: HasHarnessSignalReferences, ports: Seq[SPIPortIO]) => {
-    ports.map{ spi =>
-      spi.dq.map { dq =>
-        dq.i := DontCare
-      }
-    } 
-  }
-})
-
-class WithPassthroughI2CTiedOff extends OverrideHarnessBinder({
-  (system: HasPeripheryI2CModuleImp, th: HasHarnessSignalReferences, ports: Seq[I2CPort]) => {
-    ports.map{ i2c =>
-      i2c.sda.in := DontCare
-      i2c.scl.in := DontCare
-    } 
-  }
-})
-
 // DOC include start: WithUARTAdapter
 class WithUARTAdapter extends OverrideHarnessBinder({
   (system: HasPeripheryUARTModuleImp, th: HasHarnessSignalReferences, ports: Seq[UARTPortIO]) => {
@@ -166,14 +126,6 @@ class WithPassthroughSimSPIFlashModel(rdOnly: Boolean = true) extends OverrideHa
       (port, dqIOs ++ csIOs ++ sckIOs)
     }).unzip
     // SimSPIFlashModel.connect(ios, th.harnessReset, rdOnly)(system.p)
-  }
-})
-
-class WithCustomGPIOTiedOff extends OverrideHarnessBinder({
-  (system: CanHaveCustomGPIO, th: HasHarnessSignalReferences, ports: Seq[CustomGPIOIO]) => {
-    ports.map({ port =>
-      port.input_pins := DontCare
-    })
   }
 })
 
